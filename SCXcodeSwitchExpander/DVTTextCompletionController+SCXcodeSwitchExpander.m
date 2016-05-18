@@ -202,12 +202,13 @@
 				}
 			}
 			
-            for(IDEIndexSymbol *child in [((IDEIndexContainerSymbol*)symbol).children allObjects]) {
-
+            id allChildren = [((IDEIndexContainerSymbol*)symbol).children allObjects];
+            
+            [allChildren enumerateObjectsUsingBlock:^(IDEIndexSymbol *child, NSUInteger idx, BOOL * _Nonnull stop) {
                 // Skip the `child` symbol if it is not a enum constant.
                 if (![self _isSymbolKindEnumConstant:child.symbolKind])
                 {
-                    continue;
+                    return;
                 }
                 
                 if([switchContent rangeOfString:child.displayName].location == NSNotFound) {
@@ -219,12 +220,13 @@
                         }
                         case DVTSourceCodeLanguageKindObjectiveC:
                         case DVTSourceCodeLanguageKindOther: {
-                            [replacementString appendString:[NSString stringWithFormat:@"case %@: {\n<#statement#>\nbreak;\n}\n", child.displayName]];
+                            NSString *newlineSymbol = (idx == [allChildren count] - 1) ? @"" : @"\n";
+                            [replacementString appendString:[NSString stringWithFormat:@"case %@: \n<#statement#>\nbreak;\n%@", child.displayName, newlineSymbol]];
                             break;
                         }
                     }
                 }
-            }
+            }];
 			
             [textView insertText:replacementString replacementRange:NSMakeRange(switchContentRange.location + switchContentRange.length, 0)];
 			
